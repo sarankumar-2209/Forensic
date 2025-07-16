@@ -1,4 +1,0 @@
-2025-07-16T16:18:15.308311 | IP: 127.0.0.1 | Location: 0,0 (Unknown, Unknown) | UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 | Path: / | Event: Visited Home
-2025-07-16T16:18:23.848022 | IP: 127.0.0.1 | Location: 0,0 (Unknown, Unknown) | UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 | Path: /login | Event: Visited Login Page
-2025-07-16T16:18:50.634765 | IP: 127.0.0.1 | Location: 0,0 (Unknown, Unknown) | UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 | Path: /login | Event: Successful Login
-2025-07-16T16:18:50.960300 | IP: 127.0.0.1 | Location: 0,0 (Unknown, Unknown) | UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 | Path: /admin | Event: Accessed Admin Panel
