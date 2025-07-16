@@ -20,20 +20,14 @@ def get_client_ip():
 
 def get_geo_info(ip):
     try:
-        req = urllib.request.Request(
-            f"https://ipinfo.io/{ip}/json",
-            headers={'User-Agent': 'Mozilla/5.0'}
-        )
-        with urllib.request.urlopen(req, timeout=5) as url:
+        with urllib.request.urlopen(f"https://ipinfo.io/{ip}/json") as url:
             data = json.loads(url.read().decode())
             loc = data.get("loc", "0,0")
             city = data.get("city", "Unknown")
             country = data.get("country", "Unknown")
             return loc, city, country
-    except Exception as e:
-        print(f"[GeoError] Failed to get info for {ip}: {e}")
+    except:
         return "0,0", "Unknown", "Unknown"
-
 
 def log_event(ip, ua, msg, path):
     loc, city, country = get_geo_info(ip)
