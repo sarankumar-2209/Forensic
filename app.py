@@ -5,14 +5,18 @@ import smtplib
 from email.mime.text import MIMEText
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.secret_key = 'MnkYCUA1ysNzrjJo9T6FidGvgDBhpeX8PKHwmRu5Lc3xOSQ7tWfEbl40VIa2Zq'
 
 LOG_PATH = 'logs/activity.log'
 BAN_LIST = set()
 FAILED_LOGINS = {}
 
 EMAIL_ALERTS = True
-EMAIL_TO = 'admin@example.com'
+EMAIL_TO = 'saran2209kumar@gmail.com'
+
+def get_client_ip():
+    # Extract real client IP behind reverse proxy like Render.com
+    return request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
 
 def get_geo_info(ip):
     try:
@@ -57,18 +61,20 @@ def detect_attack(data):
 
 @app.before_request
 def block_banned_ips():
-    ip = request.remote_addr
+    ip = get_client_ip()
     if ip in BAN_LIST:
         return "403 Forbidden", 403
 
 @app.route('/')
 def index():
-    log_event(request.remote_addr, request.headers.get('User-Agent'), "Visited Home", request.path)
+    ip = get_client_ip()
+    ua = request.headers.get('User-Agent')
+    log_event(ip, ua, "Visited Home", request.path)
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    ip = request.remote_addr
+    ip = get_client_ip()
     ua = request.headers.get('User-Agent')
     if request.method == 'POST':
         username = request.form.get('username', '')
@@ -99,7 +105,9 @@ def login():
 def admin():
     if 'user' not in session:
         return redirect(url_for('login'))
-    log_event(request.remote_addr, request.headers.get('User-Agent'), "Accessed Admin Panel", request.path)
+    ip = get_client_ip()
+    ua = request.headers.get('User-Agent')
+    log_event(ip, ua, "Accessed Admin Panel", request.path)
     with open(LOG_PATH, 'r') as f:
         logs = f.readlines()
     return render_template('admin.html', logs=logs)
