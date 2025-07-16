@@ -9,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 import logging
 
 # === Configuration ===
-app = Flask(_name_)
+app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_insecure_key")
 EMAIL_ALERTS = True
 EMAIL_TO = os.environ.get("ALERT_EMAIL", "saran2209kumar@gmail.com")
