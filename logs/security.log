@@ -1,0 +1,15 @@
+2025-07-17 12:35:46,041 | WARNING | Suspicious request detected | IP: 127.0.0.1 | User: admin | Session: ff3069ca-8548-4130-a8f2-c7fe337ae22d | Location: Local Network | Threat: None
+2025-07-17 12:35:46,042 | INFO | Accessed home page | IP: 127.0.0.1 | User: admin | Session: ff3069ca-8548-4130-a8f2-c7fe337ae22d | Location: Local Network | Threat: None
+2025-07-17 12:35:47,691 | WARNING | Suspicious request detected | IP: 127.0.0.1 | User: admin | Session: ff3069ca-8548-4130-a8f2-c7fe337ae22d | Location: Local Network | Threat: None
+2025-07-17 12:35:47,692 | INFO | Accessed login page | IP: 127.0.0.1 | User: admin | Session: ff3069ca-8548-4130-a8f2-c7fe337ae22d | Location: Local Network | Threat: None
+2025-07-17 12:35:52,075 | WARNING | Suspicious request detected | IP: 127.0.0.1 | User: admin | Session: ff3069ca-8548-4130-a8f2-c7fe337ae22d | Location: Local Network | Threat: None
+2025-07-17 12:39:36,106 | INFO | Application starting | IP: 127.0.0.1 | User: system | Session: startup | Location: local | Threat: None
+2025-07-17 12:39:40,767 | INFO | New session created | IP: 192.168.0.140 | User: anonymous | Session: b582e1ee-755d-43f5-bc58-a35489a8e906 | Location: Unknown, Unknown | Threat: None
+2025-07-17 12:39:41,153 | WARNING | Suspicious request detected | IP: 192.168.0.140 | User: anonymous | Session: b582e1ee-755d-43f5-bc58-a35489a8e906 | Location: Unknown, Unknown | Threat: None
+2025-07-17 12:39:41,498 | INFO | Accessed home page | IP: 192.168.0.140 | User: anonymous | Session: b582e1ee-755d-43f5-bc58-a35489a8e906 | Location: Unknown, Unknown | Threat: None
+2025-07-17 12:39:43,719 | WARNING | Suspicious request detected | IP: 192.168.0.140 | User: anonymous | Session: b582e1ee-755d-43f5-bc58-a35489a8e906 | Location: Unknown, Unknown | Threat: None
+2025-07-17 12:39:44,097 | INFO | Accessed login page | IP: 192.168.0.140 | User: anonymous | Session: b582e1ee-755d-43f5-bc58-a35489a8e906 | Location: Unknown, Unknown | Threat: None
+2025-07-17 12:39:49,028 | WARNING | Suspicious request detected | IP: 192.168.0.140 | User: anonymous | Session: b582e1ee-755d-43f5-bc58-a35489a8e906 | Location: Unknown, Unknown | Threat: None
+2025-07-17 12:39:49,777 | INFO | Successful login | IP: 192.168.0.140 | User: admin | Session: b582e1ee-755d-43f5-bc58-a35489a8e906 | Location: Unknown, Unknown | Threat: None
+2025-07-17 12:39:49,860 | WARNING | Suspicious request detected | IP: 192.168.0.140 | User: admin | Session: b582e1ee-755d-43f5-bc58-a35489a8e906 | Location: Unknown Location | Threat: None
+2025-07-17 12:39:49,909 | INFO | Accessed admin panel | IP: 192.168.0.140 | User: admin | Session: b582e1ee-755d-43f5-bc58-a35489a8e906 | Location: Unknown Location | Threat: None

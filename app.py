@@ -11,15 +11,27 @@ import logging
 import socket
 import platform
 import uuid
+import math
 
-# === Configuration ===
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default_insecure_key")
 
-# Enhanced email configuration
+# Enhanced Configuration
+SECURITY_CONFIG = {
+    'geoip_enabled': True,
+    'threat_intel_enabled': True,
+    'request_analysis': True,
+    'known_threat_ips': {
+        'TOR_EXIT_NODE': ['1.1.1.1', '2.2.2.2'],
+        'SPAMMER': ['3.3.3.3'],
+        'MALWARE': ['4.4.4.4']
+    },
+    'suspicious_networks': ['185.', '45.']
+}
+
 EMAIL_CONFIG = {
     'alerts_enabled': True,
-    'recipient': os.environ.get("ALERT_EMAIL", "saran2209kumar@gmail.com"),
+    'recipient': os.environ.get("ALERT_EMAIL", "admin@example.com"),
     'smtp_server': os.environ.get("SMTP_SERVER", "smtp.example.com"),
     'smtp_port': int(os.environ.get("SMTP_PORT", 587)),
     'smtp_user': os.environ.get("SMTP_USER", "alerts@example.com"),
@@ -27,22 +39,19 @@ EMAIL_CONFIG = {
     'from_address': os.environ.get("FROM_EMAIL", "security-alerts@example.com")
 }
 
-BAN_DURATION = 600  # seconds (10 minutes)
-MAX_LOG_SIZE = 10 * 1024 * 1024  # 10MB
+BAN_DURATION = 600
+MAX_LOG_SIZE = 10 * 1024 * 1024
 LOG_BACKUP_COUNT = 5
 
-# === Rate Limiting ===
-limiter = Limiter(app=app, key_func=get_remote_address)
+limiter = Limiter(app=app, key_func=lambda: get_client_info()[0])
 
-# === Logger Setup ===
-LOG_PATH = 'logs/activity.log'
+# Advanced Logger Setup
+LOG_PATH = 'logs/security.log'
 os.makedirs('logs', exist_ok=True)
 
-# Create main logger
-logger = logging.getLogger('SecurityLogger')
+logger = logging.getLogger('AdvancedSecurityLogger')
 logger.setLevel(logging.INFO)
 
-# File handler with rotation
 file_handler = RotatingFileHandler(
     LOG_PATH,
     maxBytes=MAX_LOG_SIZE,
@@ -50,16 +59,14 @@ file_handler = RotatingFileHandler(
     encoding='utf-8'
 )
 
-# Detailed log format
 log_format = '%(asctime)s | %(levelname)s | %(message)s | IP: %(client_ip)s | ' \
-              'User: %(user)s | Session: %(session_id)s | ' \
-              'Location: %(location)s | Device: %(device_info)s'
+             'User: %(user)s | Session: %(session_id)s | ' \
+             'Location: %(location)s | Threat: %(threat_info)s'
 
 formatter = logging.Formatter(log_format)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-# Optional email logging for critical events
 if EMAIL_CONFIG['alerts_enabled'] and EMAIL_CONFIG['smtp_pass']:
     mail_handler = SMTPHandler(
         mailhost=(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']),
@@ -75,350 +82,230 @@ if EMAIL_CONFIG['alerts_enabled'] and EMAIL_CONFIG['smtp_pass']:
     Time:               %(asctime)s
     Message:            %(message)s
     Client IP:          %(client_ip)s
-    User:               %(user)s
-    Session ID:         %(session_id)s
+    Threat Level:       %(threat_info)s
     Location:           %(location)s
-    Device Info:        %(device_info)s
     '''))
     logger.addHandler(mail_handler)
 
-# === Ban Handling ===
 BAN_LIST = {}
 FAILED_LOGINS = {}
 
-# === Utils ===
 def get_client_info():
-    """Collect comprehensive client information with proxy support"""
-    # Try common proxy headers in order
-    ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or \
-         request.headers.get('X-Real-IP', '').split(',')[0].strip() or \
-         request.remote_addr
+    """Advanced client information with proxy detection"""
+    ip = (
+        request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or
+        request.headers.get('X-Real-IP', '').split(',')[0].strip() or
+        request.remote_addr
+    )
     
-    # Special handling for Render
-    if ip == '127.0.0.1' and 'render.com' in request.headers.get('Host', ''):
-        # Try to get the right-most X-Forwarded-For IP (most likely the client)
-        xff = request.headers.get('X-Forwarded-For', '')
-        if xff:
-            ips = [ip.strip() for ip in xff.split(',')]
-            # Skip known internal IPs
-            for ip in reversed(ips):
-                if ip not in ('127.0.0.1', '::1'):
-                    break
-    
+    # Cloud platform specific handling
+    if ip == '127.0.0.1':
+        for header in ['X-Forwarded-For', 'X-Render-Forwarded-For']:
+            if header in request.headers:
+                ips = [x.strip() for x in request.headers[header].split(',')]
+                ip = next((x for x in reversed(ips) if x not in ('127.0.0.1', '::1')), ip)
+
     ua = request.headers.get('User-Agent', 'Unknown')
     session_id = session.get('session_id', 'pre-auth')
     user = session.get('user', 'anonymous')
     
-    # Get additional headers that might be useful
-    accept_lang = request.headers.get('Accept-Language', '')
-    referrer = request.headers.get('Referer', 'direct')
-    
-    # Basic device detection
     device_info = {
         'user_agent': ua,
-        'accept_language': accept_lang,
-        'platform': platform.platform(),
-        'hostname': socket.gethostname(),
-        'referrer': referrer
+        'accept_language': request.headers.get('Accept-Language', ''),
+        'referrer': request.headers.get('Referer', 'direct'),
+        'timezone': request.headers.get('X-Timezone-Offset', 'unknown')
     }
     
     return ip, ua, session_id, user, device_info
 
-
-
 def get_geo_info(ip):
-    """Enhanced geo location with multiple fallback providers"""
-    if ip in ['127.0.0.1', '::1']:
-        return "0,0", "Localhost", "Local Network", "Internal"
+    """Simplified geo location without coordinates"""
+    if not SECURITY_CONFIG['geoip_enabled'] or ip in ['127.0.0.1', '::1']:
+        return "Local Network"
     
-    providers = [
-        ("https://ipapi.co/{ip}/json/", lambda d: (f"{d.get('latitude', 0)},{d.get('longitude', 0)}", 
-                                                  d.get('city', 'Unknown'), 
-                                                  d.get('country_name', 'Unknown'), 
-                                                  d.get('org', 'Unknown'))),
-        ("https://ipwhois.app/json/{ip}", lambda d: (f"{d.get('latitude', 0)},{d.get('longitude', 0)}", 
-                                                    d.get('city', 'Unknown'), 
-                                                    d.get('country', 'Unknown'), 
-                                                    d.get('isp', 'Unknown')))
-    ]
+    try:
+        url = f"https://ipapi.co/{ip}/json/"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+            return f"{data.get('city', 'Unknown')}, {data.get('country_name', 'Unknown')}"
+    except Exception:
+        return "Unknown Location"
+
+def check_ip_threat(ip):
+    """Advanced threat intelligence check"""
+    if not SECURITY_CONFIG['threat_intel_enabled']:
+        return {'is_threat': False}
     
-    for url_template, parser in providers:
-        try:
-            url = url_template.format(ip=ip)
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=3) as response:
-                data = json.loads(response.read().decode())
-                return parser(data)
-        except Exception as e:
+    threat_info = {
+        'is_threat': False,
+        'threat_type': None,
+        'confidence': 0
+    }
+    
+    # Check known threat databases
+    for threat_type, ips in SECURITY_CONFIG['known_threat_ips'].items():
+        if ip in ips:
+            threat_info.update({
+                'is_threat': True,
+                'threat_type': threat_type,
+                'confidence': 90
+            })
+            return threat_info
+    
+    # Check suspicious networks
+    for network in SECURITY_CONFIG['suspicious_networks']:
+        if ip.startswith(network):
+            threat_info.update({
+                'is_threat': True,
+                'threat_type': 'SUSPICIOUS_NETWORK',
+                'confidence': 70
+            })
+            return threat_info
+    
+    return threat_info
+
+def analyze_request(request):
+    """Comprehensive request analysis"""
+    if not SECURITY_CONFIG['request_analysis']:
+        return {}
+    
+    analysis = {
+        'header_anomalies': [],
+        'path_anomalies': [],
+        'parameter_anomalies': []
+    }
+    
+    # Header analysis
+    ua = request.headers.get('User-Agent', '')
+    if len(ua) > 200:
+        analysis['header_anomalies'].append('oversized_user_agent')
+    if 'Accept' in request.headers and request.headers['Accept'] == '*/*':
+        analysis['header_anomalies'].append('generic_accept_header')
+    
+    # Path analysis
+    if '..' in request.path or '//' in request.path:
+        analysis['path_anomalies'].append('path_traversal_attempt')
+    if len(request.path) > 100:
+        analysis['path_anomalies'].append('overly_long_path')
+    
+    # Parameter analysis
+    for param, value in request.args.items():
+        if len(value) > 100:
+            analysis['parameter_anomalies'].append(f'oversized_parameter_{param}')
+        if any(char in value for char in [';', '%', '$']):
+            analysis['parameter_anomalies'].append(f'suspicious_chars_in_{param}')
+    
+    return analysis
+
+def detect_attack(data):
+    """Detect common attack patterns in input data"""
+    attack_patterns = {
+        'sql_injection': [r'(\'|\"|--|;|/\*|\*/|@@|char\(|xp_|sp_|exec|union|select|insert|update|delete|drop|alter)'],
+        'xss': [r'(<script|javascript:|onerror=|onload=|onmouseover=|alert\(|document\.cookie)'],
+        'command_injection': [r'(\||&|;|`|\$\(|\n|\r)']
+    }
+    
+    for field, value in data.items():
+        if not isinstance(value, str):
             continue
-    
-    return "0,0", "Unknown", "Unknown", "Unknown"
+            
+        for attack_type, patterns in attack_patterns.items():
+            for pattern in patterns:
+                if re.search(pattern, value, re.IGNORECASE):
+                    return True
+    return False
 
 def log_event(level, message, extra_data=None):
-    """Enhanced logging with contextual information"""
+    """Enhanced logging with threat detection"""
     ip, ua, session_id, user, device_info = get_client_info()
-    loc, city, country, isp = get_geo_info(ip)
+    location = get_geo_info(ip)
+    threat_info = check_ip_threat(ip)
+    request_analysis = analyze_request(request)
     
-    # Prepare log data
     log_data = {
         'client_ip': ip,
         'user': user,
         'session_id': session_id,
-        'location': f"{loc} ({city}, {country}, ISP: {isp})",
-        'device_info': str(device_info),
-        'path': request.path,
-        'method': request.method,
+        'location': location,
+        'threat_info': threat_info.get('threat_type', 'None'),
+        'device_info': device_info,
+        'request_analysis': request_analysis if request_analysis else None,
         'extra': str(extra_data) if extra_data else None
     }
     
-    # Log at appropriate level
-    if level == 'info':
-        logger.info(message, extra=log_data)
-    elif level == 'warning':
-        logger.warning(message, extra=log_data)
-    elif level == 'error':
-        logger.error(message, extra=log_data)
-    elif level == 'critical':
-        logger.critical(message, extra=log_data)
-    else:
-        logger.debug(message, extra=log_data)
+    # Elevate to critical if threat detected
+    if threat_info.get('is_threat', False):
+        level = 'critical'
+        message = f"THREAT DETECTED: {message}"
     
-    # For critical events, trigger additional alerting
+    getattr(logger, level)(message, extra=log_data)
+    
     if level == 'critical' and EMAIL_CONFIG['alerts_enabled']:
-        send_email_alert(ip, message, request.path, loc, city, country, isp, extra_data)
+        send_security_alert(ip, message, location, threat_info, request_analysis)
 
-def send_email_alert(ip, message, path, loc, city, country, isp, extra_data=None):
-    """Enhanced email alerts with more details"""
+def send_security_alert(ip, message, location, threat_info, request_analysis):
+    """Enhanced security alert email"""
     try:
-        # Create message container
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f"SECURITY ALERT: {message[:50]}..."
         msg['From'] = EMAIL_CONFIG['from_address']
         msg['To'] = EMAIL_CONFIG['recipient']
         
-        # Create HTML content
         html = f"""
         <html>
-          <head></head>
           <body>
             <h2>Security Alert</h2>
-            <p><strong>Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+            <p><strong>Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
             <p><strong>Event:</strong> {message}</p>
             
-            <h3>Client Details</h3>
+            <h3>Threat Details</h3>
             <table border="1">
               <tr><td>IP Address</td><td>{ip}</td></tr>
-              <tr><td>Location</td><td>{loc} ({city}, {country})</td></tr>
-              <tr><td>ISP</td><td>{isp}</td></tr>
-              <tr><td>Path Accessed</td><td>{path}</td></tr>
-              <tr><td>Method</td><td>{request.method}</td></tr>
+              <tr><td>Location</td><td>{location}</td></tr>
+              <tr><td>Threat Type</td><td>{threat_info.get('threat_type', 'None')}</td></tr>
+              <tr><td>Confidence</td><td>{threat_info.get('confidence', 0)}%</td></tr>
             </table>
             
-            <h3>Additional Data</h3>
-            <pre>{json.dumps(extra_data, indent=2) if extra_data else 'None'}</pre>
-            
-            <h3>Full Headers</h3>
-            <pre>{dict(request.headers)}</pre>
+            <h3>Request Analysis</h3>
+            <pre>{json.dumps(request_analysis, indent=2) if request_analysis else 'None'}</pre>
           </body>
         </html>
         """
         
-        # Attach HTML part
         msg.attach(MIMEText(html, 'html'))
         
-        # Send the email
         with smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port']) as server:
             server.starttls()
             server.login(EMAIL_CONFIG['smtp_user'], EMAIL_CONFIG['smtp_pass'])
             server.send_message(msg)
             
     except Exception as e:
-        logger.error(f"Failed to send email alert: {str(e)}", extra={
-            'client_ip': ip,
-            'user': 'system',
-            'session_id': 'N/A',
-            'location': loc,
-            'device_info': 'Email alert system'
-        })
-
-def detect_attack(data):
-    """Enhanced attack detection with comprehensive patterns and heuristics"""
-    # Base patterns (expanded list)
-    patterns = [
-        # SQL Injection
-        r"(?:[\s'\"](?:union|select|insert|update|delete|drop|alter|create|truncate|declare|exec|execute|grant|revoke)\s)",
-        r"(?:\b(?:OR|AND)\s+\d+=\d+)",
-        r"(?:;\s*(?:--|#|/\*))",
-        r"(?:\b(?:waitfor|delay|benchmark|sleep)\s*\(\s*)",
-        
-        # XSS and HTML Injection
-        r"(?:<script|<iframe|<img|<svg|<meta|<body|<style|<link|<form|<input|<object|<embed|<video|<audio)",
-        r"(?:on\w+\s*=|javascript:|vbscript:|data:|<\?php|<\?)",
-        r"(?:\\x[0-9a-fA-F]{2}|%[0-9a-fA-F]{2}|&#x?[0-9a-fA-F]+;)",
-        
-        # Path/Directory Traversal
-        r"(?:\.\./|\.\.\\|~/|\\|//|\\\\|\.\.%2f|\.\.%5c)",
-        
-        # Command Injection
-        r"(?:\|\||&&|;|`|\$(?:\{|\(|\[))",
-        r"(?:\b(?:cmd|sh|bash|powershell|python|perl|ruby)\b)",
-        
-        # Server-Side Template Injection
-        r"(?:\{\{.*\}\}|\[\[.*\]\]|<\%.*\%>)",
-        
-        # File Inclusion
-        r"(?:\b(?:include|require)(?:_once)?\s*\(|\b(?:file_get_contents|fopen|readfile)\s*\()",
-        
-        # XML/XXE
-        r"(?:<!DOCTYPE|<!ENTITY|SYSTEM|PUBLIC|CDATA|%[^;]+;)",
-        
-        # Deserialization attacks
-        r"(?:\b(?:unserialize|pickle|yaml\.load|marshal\.loads)\s*\()",
-        
-        # Regex Injection
-        r"(?:\\[sSwWdDbDZzGABb]|\^|\$|\(.*\)|\{\d+,?\d*\})",
-        
-        # Obfuscation techniques
-        r"(?:String\.fromCharCode|eval\(|setTimeout\(|setInterval\(|Function\()",
-        r"(?:\.replace\(|\.concat\(|\.substr\(|\.substring\()",
-        
-        # Special suspicious characters
-        r"(?:\x00|\x1a|\x08|\x09|\x0a|\x0d|\x7f)"
-    ]
-    
-    # Context-specific patterns
-    username_patterns = [
-        r"(?:admin\s*'|root\s*'|system\s*')",
-        r"(?:\bor\b\s+\d+=\d+)"
-    ]
-    
-    password_patterns = [
-        r"(?:password\s*=|passwd\s*=|pwd\s*=)",
-        r"(?:\b(?:true|false|null)\b)"
-    ]
-    
-    # Heuristic checks
-    suspicious = False
-    attack_details = {
-        'fields': {},
-        'heuristics': {}
-    }
-    
-    for key, value in data.items():
-        if not isinstance(value, str):
-            continue
-            
-        field_details = {
-            'patterns_matched': [],
-            'length': len(value),
-            'entropy': calculate_entropy(value),
-            'is_suspicious': False
-        }
-        
-        # Check for extremely long inputs
-        if len(value) > 1024:
-            field_details['heuristics'] = {'oversized_input': True}
-            field_details['is_suspicious'] = True
-            log_event('warning', f"Oversized input in field {key} ({len(value)} chars)")
-        
-        # Check for high entropy (potential encoded/obfuscated payload)
-        if field_details['entropy'] > 4.5:  # Normal text entropy is typically 3.5-4.5
-            field_details['heuristics']['high_entropy'] = True
-            field_details['is_suspicious'] = True
-            log_event('warning', f"High entropy input in field {key} ({field_details['entropy']:.2f})")
-        
-        # Field-specific pattern checks
-        current_patterns = patterns.copy()
-        if 'user' in key.lower() or 'name' in key.lower():
-            current_patterns.extend(username_patterns)
-        if 'pass' in key.lower():
-            current_patterns.extend(password_patterns)
-        
-        # Pattern matching
-        for pattern in current_patterns:
-            if re.search(pattern, value, re.IGNORECASE):
-                field_details['patterns_matched'].append(pattern)
-                field_details['is_suspicious'] = True
-        
-        if field_details['is_suspicious']:
-            attack_details['fields'][key] = field_details
-            suspicious = True
-    
-    # Additional context checks
-    if 'username' in data and 'password' in data:
-        # Check for credential stuffing patterns
-        if data['username'] == data['password']:
-            attack_details['heuristics']['username_password_match'] = True
-            suspicious = True
-        
-        # Check for common default credentials
-        common_creds = [
-            ('admin', 'admin'),
-            ('root', 'toor'),
-            ('test', 'test'),
-            ('guest', 'guest')
-        ]
-        for user, pwd in common_creds:
-            if data['username'].lower() == user and data['password'].lower() == pwd:
-                attack_details['heuristics']['common_credentials'] = True
-                suspicious = True
-    
-    if suspicious:
-        log_event('critical', "Potential attack attempt detected", {
-            'input_analysis': attack_details,
-            'recommended_action': 'block_and_alert'
-        })
-        return True
-    
-    return False
-
-def calculate_entropy(s):
-    """Calculate Shannon entropy of a string"""
-    import math
-    if not s:
-        return 0
-    entropy = 0
-    for x in range(256):
-        p_x = float(s.count(chr(x)))/len(s)
-        if p_x > 0:
-            entropy += - p_x * math.log(p_x, 2)
-    return entropy
+        logger.error(f"Failed to send security alert: {str(e)}")
 
 @app.before_request
 def security_checks():
-    """Comprehensive pre-request security checks"""
-    ip, ua, session_id, user, device_info = get_client_info()
+    """Advanced pre-request security checks"""
+    ip, _, _, _, _ = get_client_info()
     
     # IP Ban check
     if ip in BAN_LIST:
-        ban_time = BAN_LIST[ip]
-        if datetime.now() > ban_time:
+        if datetime.now() > BAN_LIST[ip]:
             del BAN_LIST[ip]
             log_event('info', f"IP ban expired for {ip}")
         else:
-            log_event('warning', "Attempted access from banned IP", {
-                'ban_expires': ban_time.isoformat(),
-                'remaining_ban_time': str(ban_time - datetime.now())
-            })
+            log_event('warning', "Attempted access from banned IP")
             abort(403, description="IP address temporarily banned")
     
-    # Generate session ID if new session
+    # New session handling
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
-        log_event('info', "New session created", {
-            'session_id': session['session_id']
-        })
+        log_event('info', "New session created")
     
-    # Log all requests (with sensitive data filtered)
-    filtered_headers = {k: v for k, v in request.headers.items() 
-                       if k.lower() not in ['authorization', 'cookie']}
-    
-    log_event('debug', "Request received", {
-        'headers': filtered_headers,
-        'query_params': dict(request.args),
-        'form_data': {k: '[FILTERED]' if 'pass' in k.lower() else v 
-                     for k, v in request.form.items()} if request.form else None
-    })
+    # Request analysis
+    request_analysis = analyze_request(request)
+    if request_analysis:
+        log_event('warning', "Suspicious request detected", request_analysis)
 
 @app.route('/')
 def index():
@@ -548,6 +435,7 @@ if __name__ == '__main__':
         'user': 'system',
         'session_id': 'startup',
         'location': 'local',
+        'threat_info': 'None',
         'device_info': startup_log
     })
     
