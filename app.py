@@ -88,11 +88,20 @@ FAILED_LOGINS = {}
 
 # === Utils ===
 def get_client_info():
-    """Collect comprehensive client information"""
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    """Collect comprehensive client information with proxy support"""
+    # Try common proxy headers in order
+    ip = request.headers.get('X-Forwarded-For', 
+           request.headers.get('X-Real-IP', 
+           request.remote_addr)).split(',')[0].strip()
+    
+    # Handle Render's specific case
+    if ip == '127.0.0.1' and 'render.com' in request.headers.get('Host', ''):
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    
     ua = request.headers.get('User-Agent', 'Unknown')
     session_id = session.get('session_id', 'pre-auth')
     user = session.get('user', 'anonymous')
+    
     
     # Get additional headers that might be useful
     accept_lang = request.headers.get('Accept-Language', '')
@@ -110,26 +119,31 @@ def get_client_info():
     return ip, ua, session_id, user, device_info
 
 def get_geo_info(ip):
-    """Enhanced geo location with fallbacks"""
-    try:
-        req = urllib.request.Request(f"https://ipwho.is/{ip}", 
-                                   headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=5) as url:
-            data = json.loads(url.read().decode())
-            if data.get("success", False):
-                loc = f"{data['latitude']},{data['longitude']}"
-                city = data.get('city', 'Unknown')
-                country = data.get('country', 'Unknown')
-                isp = data.get('connection', {}).get('isp', 'Unknown')
-                return loc, city, country, isp
-    except Exception as e:
-        logger.warning(f"GeoIP lookup failed for {ip}: {str(e)}", extra={
-            'client_ip': ip,
-            'user': 'system',
-            'session_id': 'N/A',
-            'location': '0,0',
-            'device_info': 'GeoIP service error'
-        })
+    """Enhanced geo location with multiple fallback providers"""
+    if ip in ['127.0.0.1', '::1']:
+        return "0,0", "Localhost", "Local Network", "Internal"
+    
+    providers = [
+        ("https://ipapi.co/{ip}/json/", lambda d: (f"{d.get('latitude', 0)},{d.get('longitude', 0)}", 
+                                                  d.get('city', 'Unknown'), 
+                                                  d.get('country_name', 'Unknown'), 
+                                                  d.get('org', 'Unknown'))),
+        ("https://ipwhois.app/json/{ip}", lambda d: (f"{d.get('latitude', 0)},{d.get('longitude', 0)}", 
+                                                    d.get('city', 'Unknown'), 
+                                                    d.get('country', 'Unknown'), 
+                                                    d.get('isp', 'Unknown')))
+    ]
+    
+    for url_template, parser in providers:
+        try:
+            url = url_template.format(ip=ip)
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=3) as response:
+                data = json.loads(response.read().decode())
+                return parser(data)
+        except Exception as e:
+            continue
+    
     return "0,0", "Unknown", "Unknown", "Unknown"
 
 def log_event(level, message, extra_data=None):

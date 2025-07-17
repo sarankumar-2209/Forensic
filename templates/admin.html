@@ -1,13 +1,31 @@
 <!DOCTYPE html>
 <html>
-<head><title>Admin</title></head>
+<head>
+    <title>Admin</title>
+    <style>
+        .log-entry { margin-bottom: 15px; padding: 10px; border-left: 3px solid #ccc; }
+        .log-entry.warning { border-color: orange; background: #fff8e1; }
+        .log-entry.error { border-color: red; background: #ffebee; }
+        .log-entry.critical { border-color: darkred; background: #ffcdd2; }
+        .log-entry.info { border-color: blue; background: #e3f2fd; }
+        .log-entry.debug { border-color: gray; background: #f5f5f5; }
+        .log-ip { font-weight: bold; }
+        .log-location { color: #666; }
+        .log-message { font-weight: bold; }
+    </style>
+</head>
 <body>
     <h1>Admin Panel</h1>
-    <h2>Logs:</h2>
-    <pre>
+    <h2>Security Logs:</h2>
+    <div id="logs">
     {% for line in logs %}
-        {{ line }}
+        <div class="log-entry {{ line.split('|')[1].strip().lower() }}">
+            <div class="log-message">{{ line.split('|')[2].strip() }}</div>
+            <div class="log-ip">IP: {{ line.split('IP:')[1].split('|')[0].strip() if 'IP:' in line else 'Unknown' }}</div>
+            <div class="log-location">Location: {{ line.split('Location:')[1].split('|')[0].strip() if 'Location:' in line else 'Unknown' }}</div>
+            <pre>{{ line }}</pre>
+        </div>
     {% endfor %}
-    </pre>
+    </div>
 </body>
 </html>
