@@ -90,18 +90,24 @@ FAILED_LOGINS = {}
 def get_client_info():
     """Collect comprehensive client information with proxy support"""
     # Try common proxy headers in order
-    ip = request.headers.get('X-Forwarded-For', 
-           request.headers.get('X-Real-IP', 
-           request.remote_addr)).split(',')[0].strip()
+    ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or \
+         request.headers.get('X-Real-IP', '').split(',')[0].strip() or \
+         request.remote_addr
     
-    # Handle Render's specific case
+    # Special handling for Render
     if ip == '127.0.0.1' and 'render.com' in request.headers.get('Host', ''):
-        ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+        # Try to get the right-most X-Forwarded-For IP (most likely the client)
+        xff = request.headers.get('X-Forwarded-For', '')
+        if xff:
+            ips = [ip.strip() for ip in xff.split(',')]
+            # Skip known internal IPs
+            for ip in reversed(ips):
+                if ip not in ('127.0.0.1', '::1'):
+                    break
     
     ua = request.headers.get('User-Agent', 'Unknown')
     session_id = session.get('session_id', 'pre-auth')
     user = session.get('user', 'anonymous')
-    
     
     # Get additional headers that might be useful
     accept_lang = request.headers.get('Accept-Language', '')
@@ -117,6 +123,8 @@ def get_client_info():
     }
     
     return ip, ua, session_id, user, device_info
+
+
 
 def get_geo_info(ip):
     """Enhanced geo location with multiple fallback providers"""
