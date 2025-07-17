@@ -220,33 +220,147 @@ def send_email_alert(ip, message, path, loc, city, country, isp, extra_data=None
         })
 
 def detect_attack(data):
-    """Enhanced attack detection with more patterns"""
+    """Enhanced attack detection with comprehensive patterns and heuristics"""
+    # Base patterns (expanded list)
     patterns = [
-        r"(?:<script|onerror=|--|union|select\s|\bOR\b\s+1=1|\bDROP\s+TABLE)",  # SQLi and XSS
-        r"(?:\\x[0-9a-fA-F]{2}|%[0-9a-fA-F]{2})",  # Hex encoding
-        r"(?:\.\./|~/)",  # Path traversal
-        r"(?:java|live)script:",  # JavaScript variants
-        r"(?:document\.|window\.|alert\(|eval\(|setTimeout\()",  # JS functions
-        r"(?:<\?php|<\?=)",  # PHP tags
-        r"(?:\\r\\n|\\n|\\r)",  # Newline injections
-        r"(?:benchmark\s*\(|sleep\s*\()",  # Timing attacks
-        r"(?:into\s+outfile|into\s+dumpfile)",  # MySQL file operations
-        r"(?:waitfor\s+delay)",  # SQL Server delay
+        # SQL Injection
+        r"(?:[\s'\"](?:union|select|insert|update|delete|drop|alter|create|truncate|declare|exec|execute|grant|revoke)\s)",
+        r"(?:\b(?:OR|AND)\s+\d+=\d+)",
+        r"(?:;\s*(?:--|#|/\*))",
+        r"(?:\b(?:waitfor|delay|benchmark|sleep)\s*\(\s*)",
+        
+        # XSS and HTML Injection
+        r"(?:<script|<iframe|<img|<svg|<meta|<body|<style|<link|<form|<input|<object|<embed|<video|<audio)",
+        r"(?:on\w+\s*=|javascript:|vbscript:|data:|<\?php|<\?)",
+        r"(?:\\x[0-9a-fA-F]{2}|%[0-9a-fA-F]{2}|&#x?[0-9a-fA-F]+;)",
+        
+        # Path/Directory Traversal
+        r"(?:\.\./|\.\.\\|~/|\\|//|\\\\|\.\.%2f|\.\.%5c)",
+        
+        # Command Injection
+        r"(?:\|\||&&|;|`|\$(?:\{|\(|\[))",
+        r"(?:\b(?:cmd|sh|bash|powershell|python|perl|ruby)\b)",
+        
+        # Server-Side Template Injection
+        r"(?:\{\{.*\}\}|\[\[.*\]\]|<\%.*\%>)",
+        
+        # File Inclusion
+        r"(?:\b(?:include|require)(?:_once)?\s*\(|\b(?:file_get_contents|fopen|readfile)\s*\()",
+        
+        # XML/XXE
+        r"(?:<!DOCTYPE|<!ENTITY|SYSTEM|PUBLIC|CDATA|%[^;]+;)",
+        
+        # Deserialization attacks
+        r"(?:\b(?:unserialize|pickle|yaml\.load|marshal\.loads)\s*\()",
+        
+        # Regex Injection
+        r"(?:\\[sSwWdDbDZzGABb]|\^|\$|\(.*\)|\{\d+,?\d*\})",
+        
+        # Obfuscation techniques
+        r"(?:String\.fromCharCode|eval\(|setTimeout\(|setInterval\(|Function\()",
+        r"(?:\.replace\(|\.concat\(|\.substr\(|\.substring\()",
+        
+        # Special suspicious characters
+        r"(?:\x00|\x1a|\x08|\x09|\x0a|\x0d|\x7f)"
     ]
+    
+    # Context-specific patterns
+    username_patterns = [
+        r"(?:admin\s*'|root\s*'|system\s*')",
+        r"(?:\bor\b\s+\d+=\d+)"
+    ]
+    
+    password_patterns = [
+        r"(?:password\s*=|passwd\s*=|pwd\s*=)",
+        r"(?:\b(?:true|false|null)\b)"
+    ]
+    
+    # Heuristic checks
+    suspicious = False
+    attack_details = {
+        'fields': {},
+        'heuristics': {}
+    }
     
     for key, value in data.items():
         if not isinstance(value, str):
             continue
             
-        for pattern in patterns:
+        field_details = {
+            'patterns_matched': [],
+            'length': len(value),
+            'entropy': calculate_entropy(value),
+            'is_suspicious': False
+        }
+        
+        # Check for extremely long inputs
+        if len(value) > 1024:
+            field_details['heuristics'] = {'oversized_input': True}
+            field_details['is_suspicious'] = True
+            log_event('warning', f"Oversized input in field {key} ({len(value)} chars)")
+        
+        # Check for high entropy (potential encoded/obfuscated payload)
+        if field_details['entropy'] > 4.5:  # Normal text entropy is typically 3.5-4.5
+            field_details['heuristics']['high_entropy'] = True
+            field_details['is_suspicious'] = True
+            log_event('warning', f"High entropy input in field {key} ({field_details['entropy']:.2f})")
+        
+        # Field-specific pattern checks
+        current_patterns = patterns.copy()
+        if 'user' in key.lower() or 'name' in key.lower():
+            current_patterns.extend(username_patterns)
+        if 'pass' in key.lower():
+            current_patterns.extend(password_patterns)
+        
+        # Pattern matching
+        for pattern in current_patterns:
             if re.search(pattern, value, re.IGNORECASE):
-                log_event('warning', f"Attack pattern detected in {key}: {pattern}", {
-                    'input_value': value,
-                    'detected_pattern': pattern,
-                    'field_name': key
-                })
-                return True
+                field_details['patterns_matched'].append(pattern)
+                field_details['is_suspicious'] = True
+        
+        if field_details['is_suspicious']:
+            attack_details['fields'][key] = field_details
+            suspicious = True
+    
+    # Additional context checks
+    if 'username' in data and 'password' in data:
+        # Check for credential stuffing patterns
+        if data['username'] == data['password']:
+            attack_details['heuristics']['username_password_match'] = True
+            suspicious = True
+        
+        # Check for common default credentials
+        common_creds = [
+            ('admin', 'admin'),
+            ('root', 'toor'),
+            ('test', 'test'),
+            ('guest', 'guest')
+        ]
+        for user, pwd in common_creds:
+            if data['username'].lower() == user and data['password'].lower() == pwd:
+                attack_details['heuristics']['common_credentials'] = True
+                suspicious = True
+    
+    if suspicious:
+        log_event('critical', "Potential attack attempt detected", {
+            'input_analysis': attack_details,
+            'recommended_action': 'block_and_alert'
+        })
+        return True
+    
     return False
+
+def calculate_entropy(s):
+    """Calculate Shannon entropy of a string"""
+    import math
+    if not s:
+        return 0
+    entropy = 0
+    for x in range(256):
+        p_x = float(s.count(chr(x)))/len(s)
+        if p_x > 0:
+            entropy += - p_x * math.log(p_x, 2)
+    return entropy
 
 @app.before_request
 def security_checks():
