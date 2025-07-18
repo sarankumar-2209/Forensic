@@ -1,8 +1,22 @@
 <!DOCTYPE html>
 <html>
-<head><title>Home</title></head>
+<head>
+    <title>Home</title>
+</head>
 <body>
-    <h1>Welcome to Forensic Web App</h1>
-    <a href="/login">Go to Login</a>
+    <h1>Welcome</h1>
+    {% if 'user' in session %}
+        <p>Welcome back, {{ session['user'] }}!</p>
+        <a href="{{ url_for('admin') }}">Admin Panel</a>
+        <a href="{{ url_for('visitor_info') }}">Visitor Info</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+        <a href="{{ url_for('login') }}">Login</a>
+    {% endif %}
+    
+    <h2>Visitor Information</h2>
+    <p>Your IP: {{ visitor_ip }}</p>
+    <p>Location: {{ visitor_city }}, {{ visitor_country }}</p>
+    <p>ISP: {{ visitor_isp }}</p>
 </body>
 </html>

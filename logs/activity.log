@@ -1,0 +1,180 @@
+EventID: 1cb3e690-ddd8-425d-be77-6b62599b1b2c
+Timestamp: 2025-07-18T15:12:01.508205
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Visited Home Page
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: 786c95a432e67234e3dc361a48663896fd779d539274ef743270c1cdd7b1bfa1
+------------------------------------------------------------
+EventID: 90500f60-73b4-41c9-a2f7-fd3e63ebd8ec
+Timestamp: 2025-07-18T15:12:06.443934
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /login
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Visited Login Page
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: cab19ebe1b2a247011bd06e0cbf5a8cd34f89ef32eaf93882d4aa88b6783d375
+------------------------------------------------------------
+EventID: 1d333c16-3b37-4a40-a02e-2b93c4de5e3f
+Timestamp: 2025-07-18T15:12:12.908664
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: POST
+Path: /login
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Successful Login
+DataHash: c1078c0bc69280cdacab8fb2034daa9585742d4a14f5225c5a5421906727f4db
+IntegrityHash: db65cd48674102d05d7c67e6e0dea7a51e5ce049cf9473037e0179e3b7cfb839
+------------------------------------------------------------
+EventID: ca1bfa52-6731-44ee-8b03-5521cf8de445
+Timestamp: 2025-07-18T15:12:12.929871
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /admin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Accessed Admin Panel
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: ce540fb5173d9f66bcdafafd9ffe6e9f00efbf5977ce1db0385c5d19ab704db9
+------------------------------------------------------------
+EventID: f74cb9e2-f3ba-41b0-8937-e3321e0397b2
+Timestamp: 2025-07-18T15:12:20.361012
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /logout
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: User Logged Out
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: 49229e595b8a295896b6b735fd17b17cca529b11e2cbf577c727bebaa565229c
+------------------------------------------------------------
+EventID: be926e37-e5cb-402c-bfe6-bf5ec7e5a537
+Timestamp: 2025-07-18T15:12:20.388857
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Visited Home Page
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: 92beff86edc876c3fc2373b0eda1596286ee00c1e1e4c4bbfcebaf59a7f23ba9
+------------------------------------------------------------
+EventID: 0b7a6030-9e2b-4b63-8e27-bea08e44880d
+Timestamp: 2025-07-18T15:12:22.515729
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /login
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Visited Login Page
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: 8ea8361665af2892ca3993c7bf8677e6df6d33e63c19cfdf4c19451d3629e5cf
+------------------------------------------------------------
+EventID: 39288706-bbd5-48d5-aff5-bd5950dab44a
+Timestamp: 2025-07-18T15:12:26.990261
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: POST
+Path: /login
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Successful Login
+DataHash: c1078c0bc69280cdacab8fb2034daa9585742d4a14f5225c5a5421906727f4db
+IntegrityHash: a7e28edfbaf12f812f79fe2b128e013327894e866228bf1fc925983bc746bd95
+------------------------------------------------------------
+EventID: 8edc8db1-fff8-4d8f-aeb2-3b994af03a8e
+Timestamp: 2025-07-18T15:12:27.027012
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /admin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Accessed Admin Panel
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: d5885cf26bea2039fe46d49af00ba74f09da05ac1c51dfeef575aeef54942868
+------------------------------------------------------------

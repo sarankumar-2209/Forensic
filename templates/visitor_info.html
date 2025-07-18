@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visitor Analytics</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .map-link { color: #1a73e8; text-decoration: none; }
+        .map-link:hover { text-decoration: underline; }
+        .local-device { background-color: #f5f5f5; color: #555; }
+        .local-badge { 
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            padding: 2px 5px;
+            font-size: 0.8em;
+            color: #333;
+        }
+        .hostname {
+            font-family: monospace;
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visitor Analytics</h1>
+    <p>Welcome, {{ username }}!</p>
+    <a href="{{ url_for('admin') }}">Back to Admin</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+    
+    <h2>Recent Visitors (Last 100)</h2>
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>IP Address</th>
+            <th>Device</th>
+            <th>Network</th>
+            <th>Location</th>
+            <th>Activity</th>
+            <th>Details</th>
+        </tr>
+        {% for visitor in visitors %}
+        <tr class="{% if visitor.get('Country') == 'Local Network' %}local-device{% endif %}">
+            <td>{{ visitor.get('Timestamp', 'N/A') }}</td>
+            <td>
+                {{ visitor.get('IP', 'N/A') }}
+                {% if visitor.get('Hostname') and visitor.get('Hostname') != 'Unknown' %}
+                    <div class="hostname">{{ visitor.get('Hostname') }}</div>
+                {% endif %}
+            </td>
+            <td>
+                {% if visitor.get('Country') == 'Local Network' %}
+                    <span class="local-badge">Local Device</span><br>
+                    {{ visitor.get('City', 'N/A') }}
+                {% else %}
+                    {{ visitor.get('City', 'N/A') }}, {{ visitor.get('Country', 'N/A') }}
+                {% endif %}
+            </td>
+            <td>
+                {{ visitor.get('ISP', 'N/A') }}<br>
+                {% if visitor.get('Proxy/VPN') == 'Yes' %}
+                    <span style="color: #d32f2f;">(Proxy/VPN Detected)</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if visitor.get('Coordinates') != '0,0' %}
+                    <a class="map-link" href="https://www.google.com/maps?q={{ visitor.get('Coordinates') }}" target="_blank">
+                        View on Map
+                    </a>
+                {% else %}
+                    <em>Local Network</em>
+                {% endif %}
+            </td>
+            <td>{{ visitor.get('Event', 'N/A') }}</td>
+            <td>
+                <small>
+                    Method: {{ visitor.get('Method', 'N/A') }}<br>
+                    User Agent: {{ visitor.get('User-Agent', 'N/A')|truncate(30) }}
+                </small>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
