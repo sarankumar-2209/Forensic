@@ -13,9 +13,3 @@ bleach
 Flask-Limiter
 Flask-Talisman
 itsdangerous
-smtplib
-email-validator
-urllib3
-ipaddress
-concurrent-log-handler
-pyOpenSSL
