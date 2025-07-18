@@ -71,26 +71,70 @@ def get_client_ip():
     ip_chain = headers.get('X-Forwarded-For', headers.get('X-Real-IP', request.remote_addr))
     ips = [ip.strip() for ip in ip_chain.split(',')] if ip_chain else []
     
-    # Validate IPs and return the first non-proxy IP
+    # New: Try to detect the most likely real client IP
+    real_ip = None
     for ip in ips:
         try:
             ip_obj = ipaddress.ip_address(ip)
             if not is_proxy_ip(ip_obj):
-                return ip
+                real_ip = ip
+                break
         except ValueError:
             continue
     
-    return ips[0] if ips else request.remote_addr
+    # If no non-proxy IP found, try to get the first non-internal IP
+    if not real_ip:
+        for ip in ips:
+            try:
+                ip_obj = ipaddress.ip_address(ip)
+                if not ip_obj.is_private:
+                    real_ip = ip
+                    break
+            except ValueError:
+                continue
+    
+    # Fallback to the first IP in chain or remote_addr
+    return real_ip or (ips[0] if ips else request.remote_addr)
 
 def is_proxy_ip(ip_obj):
-    """Check if an IP is likely a proxy/VPN"""
+    """Check if an IP is likely a proxy/VPN with more comprehensive checks"""
     # First check if it's a private IP
     if ip_obj.is_private:
-        return False  # Changed to False since we want to track local IPs
+        return False
         
+    # Check against known proxy networks
     for network in KNOWN_PROXY_NETWORKS:
         if ip_obj in network:
             return True
+            
+    # New: Check against public proxy databases
+    try:
+        # Check with ipinfo.io (free tier)
+        req = urllib.request.Request(
+            f"https://ipinfo.io/{ip_obj}/json",
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+            if data.get('privacy', {}).get('proxy', False):
+                return True
+            if data.get('privacy', {}).get('vpn', False):
+                return True
+            if data.get('privacy', {}).get('tor', False):
+                return True
+                
+        # Check with proxycheck.io (free tier)
+        req = urllib.request.Request(
+            f"https://proxycheck.io/v2/{ip_obj}?vpn=1&asn=1",
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+            if data.get(ip_obj, {}).get('proxy', 'no') == 'yes':
+                return True
+    except Exception as e:
+        logger.error(f"Proxy check failed for {ip_obj}: {e}")
+        
     return False
 
 def get_hostname(ip):
@@ -101,6 +145,129 @@ def get_hostname(ip):
         return "Unknown"
 
 def get_geo_info(ip):
+    """Get comprehensive geographical information for an IP address with enhanced VPN detection"""
+    try:
+        # Handle localhost and private IPs with more descriptive info
+        if ip in ('127.0.0.1', 'localhost'):
+            return {
+                "coordinates": "0,0",
+                "latitude": 0,
+                "longitude": 0,
+                "city": "This Device (localhost)",
+                "region": "Internal Network",
+                "country": "Local Network",
+                "isp": "Local Device",
+                "timezone": "UTC",
+                "proxy": False,
+                "map_url": "",
+                "network_type": "localhost"
+            }
+            
+        # Check for private IP ranges
+        try:
+            ip_obj = ipaddress.ip_address(ip)
+            if ip_obj.is_private:
+                return {
+                    "coordinates": "0,0",
+                    "latitude": 0,
+                    "longitude": 0,
+                    "city": f"Local Device ({ip})",
+                    "region": "Internal Network",
+                    "country": "Local Network",
+                    "isp": "Local Network",
+                    "timezone": "UTC",
+                    "proxy": False,
+                    "map_url": "",
+                    "network_type": "private"
+                }
+        except ValueError:
+            pass
+            
+        # First try with ipinfo.io for detailed privacy info
+        try:
+            req = urllib.request.Request(
+                f"https://ipinfo.io/{ip}/json",
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            with urllib.request.urlopen(req, timeout=3) as response:
+                data = json.loads(response.read().decode())
+                
+                # If privacy services detected, try to get original location
+                if data.get('privacy', {}).get('proxy') or data.get('privacy', {}).get('vpn'):
+                    loc = data.get('loc', '0,0').split(',')
+                    return {
+                        "coordinates": data.get('loc', '0,0'),
+                        "latitude": float(loc[0]) if len(loc) == 2 else 0,
+                        "longitude": float(loc[1]) if len(loc) == 2 else 0,
+                        "city": data.get('city', 'Unknown'),
+                        "region": data.get('region', 'Unknown'),
+                        "country": data.get('country', 'Unknown'),
+                        "isp": data.get('org', 'Unknown'),
+                        "timezone": data.get('timezone', 'UTC'),
+                        "proxy": True,
+                        "map_url": f"https://www.google.com/maps?q={data.get('loc', '0,0')}",
+                        "network_type": "proxy/vpn"
+                    }
+        except Exception as e:
+            logger.debug(f"ipinfo.io check failed: {e}")
+            
+        # Fallback to geocoder
+        g = geocoder.ip(ip)
+        if g.ok:
+            return {
+                "coordinates": f"{g.lat},{g.lng}",
+                "latitude": g.lat,
+                "longitude": g.lng,
+                "city": g.city or "Unknown",
+                "region": g.state or "Unknown",
+                "country": g.country or "Unknown",
+                "isp": g.org or "Unknown",
+                "timezone": g.timezone or "UTC",
+                "proxy": g.is_proxy,
+                "map_url": f"https://www.google.com/maps?q={g.lat},{g.lng}",
+                "network_type": "proxy" if g.is_proxy else "direct"
+            }
+            
+        # Final fallback to ipwho.is
+        req = urllib.request.Request(
+            f"https://ipwho.is/{ip}",
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as url:
+            data = json.loads(url.read().decode())
+            if data.get("success", False):
+                lat = data.get("latitude", 0)
+                lon = data.get("longitude", 0)
+                return {
+                    "coordinates": f"{lat},{lon}",
+                    "latitude": lat,
+                    "longitude": lon,
+                    "city": data.get("city", "Unknown"),
+                    "region": data.get("region", "Unknown"),
+                    "country": data.get("country", "Unknown"),
+                    "isp": data.get("connection", {}).get("isp", "Unknown"),
+                    "timezone": data.get("timezone", {}).get("id", "UTC"),
+                    "proxy": data.get("connection", {}).get("proxy", False),
+                    "map_url": f"https://www.google.com/maps?q={lat},{lon}",
+                    "network_type": "proxy" if data.get("connection", {}).get("proxy", False) else "direct"
+                }
+                
+    except Exception as e:
+        logger.error(f"Geo info error for {ip}: {e}")
+        
+    return {
+        "coordinates": "0,0",
+        "latitude": 0,
+        "longitude": 0,
+        "city": "Unknown",
+        "region": "Unknown",
+        "country": "Unknown",
+        "isp": "Unknown",
+        "timezone": "UTC",
+        "proxy": False,
+        "map_url": "",
+        "network_type": "unknown"
+    }
     """Get comprehensive geographical information for an IP address"""
     try:
         # Handle localhost and private IPs with more descriptive info

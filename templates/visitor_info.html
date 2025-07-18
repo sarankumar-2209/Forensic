@@ -72,6 +72,19 @@
                     <em>Local Network</em>
                 {% endif %}
             </td>
+            <td>
+    {% if visitor.get('Country') == 'Local Network' %}
+        {% if visitor.get('City') and visitor.get('City') != 'Unknown' and visitor.get('Region') and visitor.get('Region') != 'Unknown' %}
+            {{ visitor.get('City') }}, {{ visitor.get('Region') }}
+            <div class="local-badge">Local Network</div>
+        {% else %}
+            <span class="local-badge">Local Device</span><br>
+            {{ visitor.get('City', 'Local Network') }}
+        {% endif %}
+    {% else %}
+        {{ visitor.get('City', 'N/A') }}, {{ visitor.get('Region', 'N/A') }}
+    {% endif %}
+</td>
             <td>{{ visitor.get('Event', 'N/A') }}</td>
             <td>
                 <small>

@@ -178,3 +178,163 @@ Event: Accessed Admin Panel
 DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
 IntegrityHash: d5885cf26bea2039fe46d49af00ba74f09da05ac1c51dfeef575aeef54942868
 ------------------------------------------------------------
+EventID: a90e0a4c-5f7b-446e-873b-9bc414e70fed
+Timestamp: 2025-07-18T15:41:47.085771
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Visited Home Page
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: b16727ee623deedbb8005d7d2be8a61863c9b3fbbe6d73e84fffb01e97675f76
+------------------------------------------------------------
+EventID: 0a4b09f9-ab04-4715-83b5-c84d4211584e
+Timestamp: 2025-07-18T15:41:50.843139
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /login
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Visited Login Page
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: 3200740d56d78801e3626666b3ae4b989eed85140ba7bd24154865b1a1cd404d
+------------------------------------------------------------
+EventID: f3b5c882-8aa5-44eb-a5da-a289e79cfeec
+Timestamp: 2025-07-18T15:41:57.702231
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: POST
+Path: /login
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Successful Login
+DataHash: c1078c0bc69280cdacab8fb2034daa9585742d4a14f5225c5a5421906727f4db
+IntegrityHash: 35840da5c2fc17b4b9a5cb7fc3af6b84cc9d8593c5dc005875ac3083448a6a54
+------------------------------------------------------------
+EventID: ae57f6ca-1224-4b7b-9aa9-1dbfa0841a4e
+Timestamp: 2025-07-18T15:41:57.747832
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /admin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Accessed Admin Panel
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: 0acb8e59e2ccf42b7dd2a38ca7b314df077aee5d829dd15eb0fc82b44143ce78
+------------------------------------------------------------
+EventID: 46a8e394-2015-40bc-b11f-a43a981877c3
+Timestamp: 2025-07-18T15:45:38.038704
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Visited Home Page
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: 83177818201f6ba7bcee51179225ef28b7a95398c1d7a62df5ff84710dc05f81
+------------------------------------------------------------
+EventID: 7241f981-9cde-4a86-a9bd-9ca6319580e5
+Timestamp: 2025-07-18T15:45:42.983583
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /login
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Visited Login Page
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: 0f9ec869bccc0b1caad9580e6e2e94671c4e8442f80336a754e3100d1838fdfb
+------------------------------------------------------------
+EventID: b72663c8-3bb0-4772-b764-aa4497fde40a
+Timestamp: 2025-07-18T15:45:49.419974
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: POST
+Path: /login
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Successful Login
+DataHash: c1078c0bc69280cdacab8fb2034daa9585742d4a14f5225c5a5421906727f4db
+IntegrityHash: d9fcd93325c9908c56c3cc916055cc684cd901b26f2f024fbda232d6bfec2d55
+------------------------------------------------------------
+EventID: 7e3b9a60-078d-4189-a018-3d9707f0f2f3
+Timestamp: 2025-07-18T15:45:49.468606
+IP: 192.168.1.125
+Hostname: DESKTOP-RGLG2LV
+ISP: Local Network
+City: Local Device (192.168.1.125)
+Region: Internal Network
+Country: Local Network
+Coordinates: 0,0
+Latitude: 0
+Longitude: 0
+Timezone: UTC
+Proxy/VPN: No
+Method: GET
+Path: /admin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Event: Accessed Admin Panel
+DataHash: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+IntegrityHash: 2d241f8585e34096b07a7a3085edb99ab45cf519b7e8f7c51198cba4ffa7343a
+------------------------------------------------------------

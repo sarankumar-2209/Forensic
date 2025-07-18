@@ -36,5 +36,43 @@
       "network_type": "private"
     },
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+  },
+  {
+    "timestamp": "2025-07-18T15:41:57.714246",
+    "username": "admin",
+    "ip": "192.168.1.125",
+    "geo_info": {
+      "coordinates": "0,0",
+      "latitude": 0,
+      "longitude": 0,
+      "city": "Local Device (192.168.1.125)",
+      "region": "Internal Network",
+      "country": "Local Network",
+      "isp": "Local Network",
+      "timezone": "UTC",
+      "proxy": false,
+      "map_url": "",
+      "network_type": "private"
+    },
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+  },
+  {
+    "timestamp": "2025-07-18T15:45:49.427877",
+    "username": "admin",
+    "ip": "192.168.1.125",
+    "geo_info": {
+      "coordinates": "0,0",
+      "latitude": 0,
+      "longitude": 0,
+      "city": "Local Device (192.168.1.125)",
+      "region": "Internal Network",
+      "country": "Local Network",
+      "isp": "Local Network",
+      "timezone": "UTC",
+      "proxy": false,
+      "map_url": "",
+      "network_type": "private"
+    },
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
   }
 ]
