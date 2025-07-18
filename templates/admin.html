@@ -1,15 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Panel</title>
+    <title>Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style nonce="{{ nonce }}">
+        /* Your existing styles... */
+        .error-box {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .error-title {
+            color: #d32f2f;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .error-item {
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Admin Panel</h1>
-    <p>Welcome, {{ username }}!</p>
-    <a href="{{ url_for('visitor_info') }}">Visitor Analytics</a>
-    <a href="{{ url_for('logout') }}">Logout</a>
-    
-    <h2>Activity Logs</h2>
-    <pre>{% for log in logs %}{{ log }}{% endfor %}</pre>
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+        <div class="nav-links">
+            <a href="{{ url_for('visitor_info') }}">Visitor Info</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </div>
+
+    <div class="user-info">
+        <h2>Welcome, {{ username }}</h2>
+        <p>Last Activity: {{ last_activity }}</p>
+    </div>
+
+    {% if log_errors %}
+    <div class="error-box">
+        <div class="error-title">Log File Errors Detected:</div>
+        {% for error in log_errors %}
+        <div class="error-item">{{ error }}</div>
+        {% endfor %}
+        <div class="error-item">Please check server logs for more details.</div>
+    </div>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <h2>Recent Visitor Activity (Last 100)</h2>
+    {% if visitors %}
+    <div class="table-container">
+        <!-- Your existing table code... -->
+    </div>
+    {% else %}
+    <div class="error-message">
+        <p>No visitor data could be loaded. Please check:</p>
+        <ul>
+            <li>Log file exists at the specified path</li>
+            <li>Log file has proper permissions</li>
+            <li>Encryption keys are valid</li>
+            {% if log_errors %}
+            <li>Server error: {{ log_errors[0] }}</li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form action="{{ url_for('admin') }}" method="POST" style="display: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    </form>
 </body>
 </html>

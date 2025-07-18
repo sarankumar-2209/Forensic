@@ -21,6 +21,10 @@
             font-family: monospace;
             color: #0066cc;
         }
+        .proxy-warning {
+            color: #d32f2f;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -34,62 +38,51 @@
         <tr>
             <th>Timestamp</th>
             <th>IP Address</th>
-            <th>Device</th>
-            <th>Network</th>
             <th>Location</th>
+            <th>Network</th>
+            <th>Map</th>
             <th>Activity</th>
             <th>Details</th>
         </tr>
         {% for visitor in visitors %}
-        <tr class="{% if visitor.get('Country') == 'Local Network' %}local-device{% endif %}">
-            <td>{{ visitor.get('Timestamp', 'N/A') }}</td>
+        <tr class="{% if visitor.get('geo_info', {}).get('country') == 'Local Network' %}local-device{% endif %}">
+            <td>{{ visitor.get('timestamp', 'N/A') }}</td>
             <td>
-                {{ visitor.get('IP', 'N/A') }}
-                {% if visitor.get('Hostname') and visitor.get('Hostname') != 'Unknown' %}
-                    <div class="hostname">{{ visitor.get('Hostname') }}</div>
+                {{ visitor.get('ip', 'N/A') }}
+                {% if visitor.get('hostname') and visitor.get('hostname') != 'Unknown' %}
+                    <div class="hostname">{{ visitor.get('hostname') }}</div>
                 {% endif %}
             </td>
             <td>
-                {% if visitor.get('Country') == 'Local Network' %}
+                {% if visitor.get('geo_info', {}).get('country') == 'Local Network' %}
                     <span class="local-badge">Local Device</span><br>
-                    {{ visitor.get('City', 'N/A') }}
+                    {{ visitor.get('geo_info', {}).get('city', 'Local Network') }}
                 {% else %}
-                    {{ visitor.get('City', 'N/A') }}, {{ visitor.get('Country', 'N/A') }}
+                    {{ visitor.get('geo_info', {}).get('city', 'N/A') }}, 
+                    {{ visitor.get('geo_info', {}).get('country', 'N/A') }}
                 {% endif %}
             </td>
             <td>
-                {{ visitor.get('ISP', 'N/A') }}<br>
-                {% if visitor.get('Proxy/VPN') == 'Yes' %}
-                    <span style="color: #d32f2f;">(Proxy/VPN Detected)</span>
+                {{ visitor.get('geo_info', {}).get('isp', 'N/A') }}
+                {% if visitor.get('geo_info', {}).get('proxy') %}
+                    <div class="proxy-warning">(Proxy/VPN Detected)</div>
                 {% endif %}
             </td>
             <td>
-                {% if visitor.get('Coordinates') != '0,0' %}
-                    <a class="map-link" href="https://www.google.com/maps?q={{ visitor.get('Coordinates') }}" target="_blank">
+                {% if visitor.get('geo_info', {}).get('coordinates') != '0,0' %}
+                    <a class="map-link" href="{{ visitor.get('geo_info', {}).get('map_url', '#') }}" target="_blank">
                         View on Map
                     </a>
                 {% else %}
                     <em>Local Network</em>
                 {% endif %}
             </td>
-            <td>
-    {% if visitor.get('Country') == 'Local Network' %}
-        {% if visitor.get('City') and visitor.get('City') != 'Unknown' and visitor.get('Region') and visitor.get('Region') != 'Unknown' %}
-            {{ visitor.get('City') }}, {{ visitor.get('Region') }}
-            <div class="local-badge">Local Network</div>
-        {% else %}
-            <span class="local-badge">Local Device</span><br>
-            {{ visitor.get('City', 'Local Network') }}
-        {% endif %}
-    {% else %}
-        {{ visitor.get('City', 'N/A') }}, {{ visitor.get('Region', 'N/A') }}
-    {% endif %}
-</td>
-            <td>{{ visitor.get('Event', 'N/A') }}</td>
+            <td>{{ visitor.get('event', 'N/A') }}</td>
             <td>
                 <small>
-                    Method: {{ visitor.get('Method', 'N/A') }}<br>
-                    User Agent: {{ visitor.get('User-Agent', 'N/A')|truncate(30) }}
+                    Method: {{ visitor.get('method', 'N/A') }}<br>
+                    Path: {{ visitor.get('path', 'N/A') }}<br>
+                    User Agent: {{ visitor.get('user_agent', 'N/A')|truncate(30) }}
                 </small>
             </td>
         </tr>
