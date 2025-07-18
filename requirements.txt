@@ -13,3 +13,4 @@ bleach
 Flask-Limiter
 Flask-Talisman
 itsdangerous
+gunicorn
