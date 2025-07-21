@@ -287,37 +287,70 @@ def get_client_ip():
     ip_chain = headers.get('X-Forwarded-For', headers.get('X-Real-IP', request.remote_addr))
     ips = [ip.strip() for ip in ip_chain.split(',')] if ip_chain else []
     
-    real_ip = None
+    # Additional headers that might contain real IP
+    potential_ip_headers = [
+        'CF-Connecting-IP',          # Cloudflare
+        'True-Client-IP',            # Akamai and Cloudflare
+        'X-Cluster-Client-IP',       # Rackspace LB and others
+        'Proxy-Client-IP',           # Apache httpd
+        'WL-Proxy-Client-IP',        # WebLogic
+        'HTTP_X_FORWARDED_FOR',      # Alternate case
+        'HTTP_X_REAL_IP',            # Alternate case
+        'HTTP_CLIENT_IP',            # Client IP header
+        'HTTP_FORWARDED_FOR',        # Forwarded for
+        'HTTP_FORWARDED',            # Forwarded
+        'HTTP_VIA',                  # Via
+    ]
+    
+    # Check all potential headers for IP addresses
+    for header in potential_ip_headers:
+        if header in headers:
+            header_ips = [ip.strip() for ip in headers[header].split(',') if ip.strip()]
+            ips.extend(header_ips)
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_ips = []
     for ip in ips:
+        if ip not in seen:
+            seen.add(ip)
+            unique_ips.append(ip)
+    
+    # Process the IP chain to find the real client IP
+    real_ip = None
+    for ip in unique_ips:
         try:
             ip_obj = ipaddress.ip_address(ip)
-            if not is_proxy_ip(ip_obj):
-                real_ip = ip
-                break
+            
+            # Skip private IPs unless we're in debug mode
+            if ip_obj.is_private and os.environ.get('FLASK_ENV') != 'development':
+                continue
+                
+            # Check if IP is from a known proxy/VPN range
+            if is_proxy_ip(ip_obj):
+                continue
+                
+            # Found a potential real IP
+            real_ip = ip
+            break
+            
         except ValueError:
             continue
     
-    if not real_ip:
-        for ip in ips:
-            try:
-                ip_obj = ipaddress.ip_address(ip)
-                if not ip_obj.is_private:
-                    real_ip = ip
-                    break
-            except ValueError:
-                continue
-    
-    return real_ip or (ips[0] if ips else request.remote_addr)
-
+    # If no non-proxy IP found, return the first public IP or the original remote_addr
+    return real_ip or (unique_ips[0] if unique_ips else request.remote_addr)
 def is_proxy_ip(ip_obj):
     if ip_obj.is_private:
         return False
         
+    # Check against known VPN/proxy networks
     for network in KNOWN_PROXY_NETWORKS:
         if ip_obj in network:
             return True
-            
+    
+    # Additional VPN/proxy detection methods
     try:
+        # Check with ipinfo.io
         req = urllib.request.Request(
             f"https://ipinfo.io/{ip_obj}/json",
             headers={'User-Agent': 'Mozilla/5.0'}
@@ -330,7 +363,10 @@ def is_proxy_ip(ip_obj):
                 return True
             if data.get('privacy', {}).get('tor', False):
                 return True
+            if data.get('org', '').lower() in ('cloudflare', 'akamai', 'fastly', 'incapsula'):
+                return True
                 
+        # Check with proxycheck.io
         req = urllib.request.Request(
             f"https://proxycheck.io/v2/{ip_obj}?vpn=1&asn=1",
             headers={'User-Agent': 'Mozilla/5.0'}
@@ -339,10 +375,56 @@ def is_proxy_ip(ip_obj):
             data = json.loads(response.read().decode())
             if data.get(str(ip_obj), {}).get('proxy', 'no') == 'yes':
                 return True
+            if data.get(str(ip_obj), {}).get('type', '') in ('vpn', 'proxy', 'tor'):
+                return True
+                
+        # Check with ip-api.com
+        req = urllib.request.Request(
+            f"http://ip-api.com/json/{ip_obj}?fields=proxy,hosting",
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+            if data.get('proxy', False) or data.get('hosting', False):
+                return True
+                
     except Exception as e:
         logger.error(f"Proxy check failed for {ip_obj}: {e}")
         
+    # Additional heuristic checks
+    try:
+        # Reverse DNS lookup for common VPN/proxy hostnames
+        hostname = socket.gethostbyaddr(str(ip_obj))[0]
+        if any(term in hostname.lower() for term in (
+            'vpn', 'proxy', 'tor', 'shield', 'guard', 'anonym', 
+            'cloud', 'cache', 'server', 'host', 'node'
+        )):
+            return True
+            
+        # Check for datacenter IP ranges
+        asn = get_asn_info(ip_obj)
+        if asn and any(term in asn.lower() for term in (
+            'amazon', 'google', 'azure', 'cloud', 'digitalocean',
+            'linode', 'ovh', 'vultr', 'server', 'host', 'data center'
+        )):
+            return True
+            
+    except Exception:
+        pass
+        
     return False
+
+# Helper function to get ASN information
+def get_asn_info(ip_obj):
+    try:
+        req = urllib.request.Request(
+            f"https://ipinfo.io/{ip_obj}/org",
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            return response.read().decode().strip()
+    except Exception:
+        return None
 
 def get_hostname(ip):
     try:
