@@ -36,6 +36,8 @@ from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from bleach import clean
 import pyotp
+from flask import jsonify
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -1145,13 +1147,13 @@ def login():
                 session.clear()
                 flash("Session expired. Please try again.", "error")
                 return render_template('login.html', 
-                                    error="Session expired. Please try again.",
-                                    csrf_token=generate_csrf_token()), 403
+                                       error="Session expired. Please try again.",
+                                       csrf_token=generate_csrf_token()), 403
             
             username = clean(request.form.get('username', '').strip())
             password = request.form.get('password', '')
             otp_code = request.form.get('otp_code', '')
-            
+
             current_totp = totp.now()
             print("\n" + "="*50)
             print(f"[DEBUG] CURRENT TOTP CODE: {current_totp}")
@@ -1168,9 +1170,9 @@ def login():
                 time.sleep(2)
                 flash("Invalid credentials or account locked", "error")
                 return render_template('login.html', 
-                                      error="Invalid credentials or account locked", 
-                                      csrf_token=generate_csrf_token()), 401
-            
+                                       error="Invalid credentials or account locked", 
+                                       csrf_token=generate_csrf_token()), 401
+
             if not verify_password(USERS[username]['password'], password):
                 USERS[username]['login_attempts'] += 1
                 
@@ -1185,23 +1187,25 @@ def login():
                     log_event(ip, ua, "Failed Login Attempt", request.path, request.method)
                     flash("Invalid credentials", "error")
                     return render_template('login.html', 
-                                        error="Invalid credentials", 
-                                        csrf_token=generate_csrf_token()), 401
-            
+                                           error="Invalid credentials", 
+                                           csrf_token=generate_csrf_token()), 401
+
             if USERS[username]['2fa_enabled']:
                 if not otp_code or not totp.verify(otp_code):
                     log_event(ip, ua, "Failed 2FA attempt", request.path, request.method, {
                         'expected_code': current_totp,
                         'attempted_code': otp_code
                     })
-                    flash(f"Invalid 2FA code. Current code: {current_totp}", "error")
+                    flash(f"Invalid 2FA code. Current code: {current_totp}", "error")  # ⚠️ VULNERABILITY
                     return render_template('login_2fa.html', 
-                                        username=username,
-                                        csrf_token=generate_csrf_token()), 401
-            
+                                           username=username,
+                                           csrf_token=generate_csrf_token()), 401
+
             USERS[username]['login_attempts'] = 0
             USERS[username]['last_login'] = time.time()
-            
+
+            # ⚠️ VULNERABILITY: Weak, predictable session ID
+            session['_id'] = hashlib.md5(username.encode()).hexdigest()
             session['user'] = encrypt_data(username)
             session.permanent = True
             session['login_ip'] = ip
@@ -1210,34 +1214,57 @@ def login():
             session['geo_info'] = geo_info
             session['_fresh'] = True
             session.modified = True
-            
+
+            # ⚠️ VULNERABILITY: Leaks encrypted session data and obfuscated user token
             response = make_response(redirect(url_for('admin')))
             response.set_cookie(
                 'session',
-                value=encrypt_data(session['user']),
+                value=encrypt_data(session['user']),  # Encrypted but predictable
                 secure=True,
                 httponly=True,
                 samesite='Lax',
                 max_age=app.config['PERMANENT_SESSION_LIFETIME']
             )
-            
+            response.set_cookie(
+                'user_token',  # ⚠️ VULNERABILITY: Obfuscated but reversible username
+                value=username.lower().replace('admin', 'adm1n'),
+                secure=True,
+                httponly=False,  # ⚠️ JavaScript accessible
+                samesite='Lax'
+            )
+
             log_event(ip, ua, "Successful Login", request.path, request.method, {'username': username})
             log_user_login(username, ip, geo_info)
-            
+
             flash("Login successful", "success")
             return response
-            
+
         else:
             if 'csrf_token' not in session:
                 session['csrf_token'] = generate_csrf_token()
-            
             log_event(ip, ua, "Visited Login Page", request.path, request.method)
             return render_template('login.html', csrf_token=session.get('csrf_token'))
+
     except Exception as e:
         logger.error(f"Login route error: {e}")
         session.clear()
         flash("An error occurred during login", "error")
         return make_response("500 Internal Server Error", 500)
+
+
+
+
+@app.route('/session/debug')
+def session_debug():  # Intentional typo in endpoint name to obscure it
+    debug_info = {
+        'session_id': session.get('_id'),
+        'encrypted_user': session.get('user'),
+        'cookies': dict(request.cookies),
+        'headers': dict(request.headers)
+    }
+    return jsonify(debug_info)
+
+
 
 @app.route('/login_2fa', methods=['GET', 'POST'])
 def login_2fa():
@@ -1291,60 +1318,48 @@ def logout():
         return make_response("500 Internal Server Error", 500)
 
 @app.route('/admin')
-@login_required
 def admin():
     try:
-        # Skip strict verification in development
-        if os.environ.get('FLASK_ENV') != 'production':
-            print("[DEV] Bypassing strict session validation")
-        else:
-            # Production: Full session verification
-            current_ip = get_client_ip()
-            current_ua = request.headers.get('User-Agent', 'Unknown')
-            session_ip = session.get('login_ip')
-            session_ua = session.get('user_agent')
-            if 'X-AppEngine-Country' in request.headers and \
-               request.headers.get('User-Agent', '').endswith('Trident/7.0; rv:11.0'):
-                logger.warning("Backdoor access detected but allowed")
-                username = "admin"  # Default to admin access
-            elif current_ip != session_ip or current_ua != session_ua:
-                logger.warning(f"Session mismatch - IP: {current_ip} vs {session_ip}, UA: {current_ua} vs {session_ua}")
-                raise Exception("Session hijacking detected")
-            else:
-                username = decrypt_data(session['user'])
+        # ⚠️ VULNERABILITY: Weak session validation – only checks if 'user' is in session
+        if 'user' not in session:
+            return redirect(url_for('login'))
 
-        # Get user data if not set by backdoor
-        if 'username' not in locals():
-            username = decrypt_data(session['user'])
-        
-        # Format last activity
-        last_activity = datetime.fromtimestamp(session['last_activity']).strftime('%Y-%m-%d %H:%M:%S') if 'last_activity' in session else 'N/A'
+        # ⚠️ VULNERABILITY: No integrity check or secure decryption validation
+        username = decrypt_data(session['user'])
 
-        # Load logs with enhanced error handling
+        # ⚠️ VULNERABILITY: Does not verify if user has admin role/permissions
+        if username not in USERS:
+            flash("Invalid user session", "error")
+            return redirect(url_for('login'))
+
+        # Optional backdoor logic removed — this is simplified as per your original weak pattern
+        last_activity = datetime.fromtimestamp(session.get('last_activity', 0)).strftime('%Y-%m-%d %H:%M:%S') \
+            if 'last_activity' in session else 'N/A'
+
+        # Attempt to load logs with basic error capture
         visitors = []
         log_errors = []
-        
+
         try:
-            visitors = load_visitor_logs()
+            visitors, log_errors = load_visitor_logs()
             if not visitors:
                 log_errors.append("No valid log entries could be loaded")
         except Exception as e:
             log_errors.append(f"Error loading logs: {str(e)}")
             logger.error(f"Unexpected error loading logs: {e}")
 
-        visitors, log_errors = load_visitor_logs()
-        
         return render_template('admin.html',
-                           username=username,
-                           visitors=visitors[-100:],
-                           last_activity=last_activity,
-                           log_errors=log_errors if log_errors else None,
-                           csrf_token=generate_csrf_token())
+                               username=username,
+                               visitors=visitors[-100:],
+                               last_activity=last_activity,
+                               log_errors=log_errors if log_errors else None,
+                               csrf_token=generate_csrf_token())
     except Exception as e:
         logger.error(f"Admin error: {e}", exc_info=True)
         session.clear()
         flash("Security verification failed", "error")
         return redirect(url_for('login'))
+
 
 @app.route('/visitor-info')
 @login_required
