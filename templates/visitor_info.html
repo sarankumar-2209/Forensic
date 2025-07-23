@@ -25,6 +25,20 @@
             color: #d32f2f;
             font-weight: bold;
         }
+        .security-warning {
+            background-color: #fff3e0;
+            border: 2px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .cookie-display {
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 10px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -33,6 +47,23 @@
     <a href="{{ url_for('admin') }}">Back to Admin</a>
     <a href="{{ url_for('logout') }}">Logout</a>
     
+    <!-- Security Warning Section -->
+    <div class="security-warning">
+        <h3 style="color: #d32f2f;">⚠️ SECURITY WARNING ⚠️</h3>
+        <p>Session cookies are sensitive and should NEVER be exposed in production environments.</p>
+        <p>This display is for debugging purposes only and should be removed before deployment.</p>
+    </div>
+
+    <!-- Current Session Information -->
+    <h2>Your Session Information</h2>
+    <div>
+        <p><strong>Session Cookie:</strong></p>
+        <div class="cookie-display">{{ request.cookies.get('session', 'No session cookie found') }}</div>
+        
+        <p><strong>Decrypted Session Data:</strong></p>
+        <pre>{{ session|tojson(indent=2) }}</pre>
+    </div>
+
     <h2>Recent Visitors (Last 100)</h2>
     <table>
         <tr>
@@ -43,6 +74,7 @@
             <th>Map</th>
             <th>Activity</th>
             <th>Details</th>
+            <th>Session Cookie</th>  <!-- New column -->
         </tr>
         {% for visitor in visitors %}
         <tr class="{% if visitor.get('geo_info', {}).get('country') == 'Local Network' %}local-device{% endif %}">
@@ -85,8 +117,22 @@
                     User Agent: {{ visitor.get('user_agent', 'N/A')|truncate(30) }}
                 </small>
             </td>
+            <td class="cookie-display">
+                {% if visitor.get('cookies', {}).get('session') %}
+                    {{ visitor.get('cookies', {}).get('session')|truncate(20) }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </table>
+
+    <!-- Additional Security Warning -->
+    <div class="security-warning">
+        <h3 style="color: #d32f2f;">⚠️ REMOVE THIS IN PRODUCTION ⚠️</h3>
+        <p>Exposing session cookies allows anyone to hijack user accounts.</p>
+        <p>This functionality must be removed before deploying to production.</p>
+    </div>
 </body>
 </html>

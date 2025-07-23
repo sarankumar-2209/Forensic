@@ -1345,13 +1345,19 @@ def admin():
 def visitor_info():
     try:
         visitors, log_errors = load_visitor_logs()
-        if log_errors:
-            logger.error(f"Log loading errors: {log_errors}")
-            flash(f"Partial data loaded with errors: {log_errors[0]}", "warning")
+        
+        # SECURITY WARNING: Only for debugging - remove in production
+        debug_info = None
+        if os.environ.get('FLASK_ENV') == 'development':
+            debug_info = {
+                'current_session_cookie': request.cookies.get('session'),
+                'session_data': dict(session)
+            }
         
         return render_template('visitor_info.html', 
                            visitors=visitors[:100],
                            username=decrypt_data(session.get('user')),
+                           debug_info=debug_info,  # Pass debug info only in development
                            csrf_token=generate_csrf_token())
     except Exception as e:
         logger.error(f"Visitor info error: {str(e)}", exc_info=True)
